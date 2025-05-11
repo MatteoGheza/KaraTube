@@ -1,0 +1,393 @@
+<!-- remote.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Remote</title>
+    <!-- Add Boxicons CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.2/css/boxicons.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f1f1f1;
+        }
+        #youtube-remote {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+        button, input, select {
+            padding: 15px;
+            margin: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            width: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        button {
+            background-color: #007bff;  /* Light blue */
+            color: white;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:active {
+            background-color: #003d80;
+        }
+        button:disabled {
+            background-color: #ccc;
+            color: #666;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        input:disabled {
+            background-color: #ccc;
+            color: #666;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        button i {
+            margin-right: 10px;
+            font-size: 30px;  /* Increase icon size */
+        }
+        input, select {
+            background-color: #007bff;
+            color: white;
+        }
+        input::placeholder {
+            color: white;
+        }
+        input:hover, select:hover {
+            background-color: #0056b3;
+        }
+
+        /* Specific button colors */
+        #play-button {
+            background-color: #28a745;  /* Green */
+        }
+        #play-button:hover {
+            background-color: #218838;
+        }
+        #play-button:active {
+            background-color: #1e7e34;
+        }
+
+        #pause-button {
+            background-color: #ffc107;  /* Yellow */
+        }
+        #pause-button:hover {
+            background-color: #e0a800;
+        }
+        #pause-button:active {
+            background-color: #d39e00;
+        }
+
+        #stop-button {
+            background-color: #dc3545;  /* Red */
+        }
+        #stop-button:hover {
+            background-color: #c82333;
+        }
+        #stop-button:active {
+            background-color: #bd2130;
+        }
+
+        #mute-toggle-button {
+            background-color: #6f42c1;  /* Purple */
+        }
+        #mute-toggle-button:hover {
+            background-color: #5a32a3;
+        }
+        #mute-toggle-button:active {
+            background-color: #4e2a87;
+        }
+
+        #video-list {
+            margin-top: 20px;
+            margin-bottom: 2em;
+            max-width: 600px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .video-item {
+            display: flex;
+            align-items: center;
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+        .video-item:hover {
+            background-color: #f9f9f9;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        }
+        .video-item img {
+            max-width: 80px;
+            max-height: 60px;
+            border-radius: 5px;
+        }
+        .video-item p {
+            flex-grow: 1;
+            font-weight: bold;
+            color: #333;
+            margin: 0;
+        }
+        .video-item button {
+            background-color: #007bff;
+            width: auto;
+            padding: 8px 15px;
+            font-size: 16px;
+            border-radius: 5px;
+        }
+        .video-item button:hover {
+            background-color: #0056b3;
+        }
+
+        #progress-bar-container {
+            width: 100%;
+            max-width: 600px;
+            margin-top: 20px;
+        }
+        #progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #progress-bar span {
+            display: block;
+            height: 100%;
+            background-color: #007BFF;
+            border-radius: 5px;
+            width: 0%;
+        }
+
+        #ping-status {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>YouTube Remote Control</h2>
+    <p id="ping-status"></p> <!-- Status for ping pong -->
+    <button id="open-client-button" onclick="openClient()">Apri client</button>
+    <div id="youtube-remote">
+        <input type="text" id="search-box" placeholder="Nome della canzone..." />
+        <button id="search-button"><i class="bx bx-search"></i>Cerca</button>
+        <div id="video-list"></div>
+        <div>
+            <button id="play-button"><i class="bx bx-play"></i>Play</button>
+            <button id="pause-button"><i class="bx bx-pause"></i>Pausa</button>
+            <button id="stop-button"><i class="bx bx-stop"></i>Stop</button>
+            <button id="mute-toggle-button"><i class="bx bx-volume-mute"></i> Muto</button>
+        </div>
+        <div id="progress-bar-container">
+            <div id="progress-bar" onclick="seekVideo(event)">
+                <span id="progress-bar-fill"></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const channel = new BroadcastChannel('youtube_channel');
+        let isMuted = false;
+        let isConnected = false;
+        let videoDuration = 0;
+        let lastHeartbeat = 0;
+
+        // Handle play, pause, and mute/unmute toggle
+        document.getElementById('play-button').addEventListener('click', function() {
+            channel.postMessage({ type: 'control', command: 'play' });
+        });
+
+        document.getElementById('pause-button').addEventListener('click', function() {
+            channel.postMessage({ type: 'control', command: 'pause' });
+        });
+
+        document.getElementById('stop-button').addEventListener('click', function() {
+            channel.postMessage({ type: 'control', command: 'stop' });
+        });
+
+        document.getElementById('mute-toggle-button').addEventListener('click', function() {
+            if (isMuted) {
+                channel.postMessage({ type: 'control', command: 'unmute' });
+                isMuted = false;
+                this.innerHTML = '<i class="bx bx-volume-mute"></i> Muto';
+            } else {
+                channel.postMessage({ type: 'control', command: 'mute' });
+                isMuted = true;
+                this.innerHTML = '<i class="bx bx-volume-full"></i> Togli muto';
+            }
+        });
+
+        // Handle YouTube Search
+        document.getElementById('search-box').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter' && isConnected) {
+                const query = this.value;
+                if (query) {
+                    searchYouTube(query);
+                }
+            }
+        });
+        document.getElementById('search-button').addEventListener('click', function() {
+            const query = document.getElementById('search-box').value;
+            if (query) {
+                searchYouTube(query);
+            }
+        });
+
+        function searchYouTube(query) {
+            const url = `/search_video?query=${query}`;
+            fetch(url)
+                .then(response => response.json())
+                .then(data => displaySearchResults(data.items))
+                .catch(error => {
+                    console.error('Error fetching YouTube search results:', error);
+                    alert('Error fetching data. Check your API key or CORS settings.');
+                });
+        }
+
+        function displaySearchResults(videos) {
+            const videoList = document.getElementById('video-list');
+            videoList.innerHTML = '';
+            if (videos.length === 0) {
+                videoList.innerHTML = '<p>Nessun video trovato.</p>';
+            }
+
+            videos.forEach(video => {
+                const videoItem = document.createElement('div');
+                videoItem.className = 'video-item';
+                videoItem.innerHTML = `
+                    <img src="${video.snippet.thumbnails.medium.url}" alt="${video.snippet.title}" />
+                    <p>${video.snippet.title}</p>
+                    <button onclick="selectVideo('${video.id.videoId}')">Seleziona</button>
+                `;
+                videoList.appendChild(videoItem);
+            });
+        }
+
+        function selectVideo(videoId) {
+            channel.postMessage({ type: 'video', videoId: videoId });
+        }
+
+        // Update progress bar from the client
+        function updateProgressBar(time) {
+            if (isDragging) return;  // Ignore updates while dragging the progress bar
+            videoDuration = time.duration;
+            const progressBarFill = document.getElementById('progress-bar-fill');
+            const progress = (time.currentTime / time.duration) * 100;
+            progressBarFill.style.width = progress + '%';
+        }
+
+        // Seek to a specific time when the user clicks on the progress bar
+        function seekVideo(event) {
+            const bar = event.target;
+            const clickPosition = event.offsetX;
+            const width = bar.parentElement.clientWidth;
+            const seekTime = (clickPosition / width) * 100;
+            console.log('Seeking to:', seekTime, clickPosition, width);
+            channel.postMessage({ type: 'control', command: 'seek', time: seekTime });
+        }
+
+        // Support for video seek drag functionality
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragStartTime = 0;
+
+        document.getElementById('progress-bar').addEventListener('mousedown', function(event) {
+            isDragging = true;
+            dragStartX = event.clientX;
+            dragStartTime = (document.getElementById('progress-bar-fill').style.width.replace('%', '') || 0) / 100 * videoDuration;
+            document.body.style.userSelect = 'none';
+        });
+
+        document.addEventListener('mousemove', function(event) {
+            if (isDragging) {
+                const dragDistance = event.clientX - dragStartX;
+                const progressBarWidth = document.getElementById('progress-bar').offsetWidth;
+                const newTime = dragStartTime + (dragDistance / progressBarWidth) * videoDuration;
+                
+                const progressBarFill = document.getElementById('progress-bar-fill');
+                progressBarFill.style.width = ((newTime / videoDuration) * 100) + '%';
+                
+                channel.postMessage({ type: 'control', command: 'seek', time: (newTime / videoDuration) * 100 });
+            }
+        });
+
+        document.addEventListener('mouseup', function() {
+            if (isDragging) {
+                isDragging = false;
+                document.body.style.userSelect = '';
+                const finalTime = (parseFloat(document.getElementById('progress-bar-fill').style.width.replace('%', '')) / 100) * videoDuration;
+                channel.postMessage({ type: 'control', command: 'seek', time: (finalTime / videoDuration) * 100 });
+            }
+        });
+
+        channel.addEventListener('message', function(event) {
+            if (event.data.type === 'pong') {
+                document.getElementById('ping-status').textContent = 'Client connesso.';
+                document.getElementById('open-client-button').style.display = 'none';
+                document.querySelectorAll("#youtube-remote button").forEach((btn) => { btn.disabled = false; });
+                document.getElementById('search-box').disabled = false;
+                isConnected = true;
+                lastHeartbeat = Date.now();
+            } else if (event.data.type === 'hi') {
+                lastHeartbeat = Date.now();
+            } else if (event.data.type === 'isMuted') {
+                isMuted = event.data.isMuted;
+                console.log('Muted status:', isMuted);
+                document.getElementById('mute-toggle-button').innerHTML = isMuted ? '<i class="bx bx-volume-full"></i> Togli muto' : '<i class="bx bx-volume-mute"></i> Muto';
+            } else if (event.data.type === 'progress') {
+                updateProgressBar(event.data.time);
+            }
+        });
+
+        function sendPing() {
+            channel.postMessage({ type: 'ping' });
+            console.trace();
+            document.getElementById('ping-status').textContent = 'Messaggio inviato. In attesa di risposta...';
+        }
+
+        function openClient() {
+            if (isConnected) return;
+            window.open('client.html', '_blank', 'width=800,height=600');
+            setTimeout(sendPing, 1000);
+        }
+
+        setInterval(function() {
+            if (Date.now() - lastHeartbeat > 2000) {
+                document.getElementById('ping-status').textContent = 'Client disconnesso.';
+                document.getElementById('open-client-button').style.display = 'block';
+                document.querySelectorAll("#youtube-remote button").forEach((btn) => { btn.disabled = true; });
+                document.getElementById('search-box').disabled = true;
+                isConnected = false;
+            }
+        }, 2500);
+
+        window.onload = function() {
+            sendPing();
+        };
+    </script>
+</body>
+</html>

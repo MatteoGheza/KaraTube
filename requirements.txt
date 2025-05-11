@@ -1,0 +1,6 @@
+flask
+flask-limiter
+Flask-Caching
+waitress
+python-dotenv
+requests

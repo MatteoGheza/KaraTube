@@ -1,0 +1,151 @@
+<!-- client.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Player</title>
+    <style>
+        /* Ensure full screen for the iframe */
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        #youtube-client {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        #progress-bar-container {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            max-width: 100%;
+            height: 10px;
+            background-color: #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #progress-bar span {
+            display: block;
+            height: 100%;
+            background-color: #007BFF;
+            border-radius: 5px;
+            width: 0%;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="youtube-client">
+        <!-- YouTube iframe embed -->
+        <iframe id="youtube-iframe" src="https://www.youtube.com/embed/rdorzAplV3M?enablejsapi=1&rel=0" frameborder="0"
+            allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen>
+        </iframe>
+    </div>
+
+    <script>
+        // Function that is called when the YouTube Iframe API is ready
+        function onYouTubeIframeAPIReady() {
+            window.player = new YT.Player('youtube-iframe', {
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+            console.log(window.player);
+        }
+    </script>
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script>
+        let isPlayerReady = false;
+
+        function onPlayerReady(event) {
+            isPlayerReady = true;
+            channel.postMessage({ type: 'isMuted', isMuted: window.player.isMuted() });
+        }
+
+        function onPlayerStateChange(event) {
+            if (event.data == YT.PlayerState.PLAYING || event.data == YT.PlayerState.PAUSED) {
+                // Send progress updates to the remote
+                setInterval(function () {
+                    const currentTime = window.player.getCurrentTime();
+                    const duration = window.player.getDuration();
+                    const progress = (currentTime / duration) * 100;
+                    channel.postMessage({ type: 'progress', time: { currentTime, duration } });
+                }, 1000); // Update every second
+            }
+        }
+
+        const channel = new BroadcastChannel('youtube_channel');
+        // Listen for commands sent from the remote control (Page 2)
+        channel.onmessage = function (event) {
+            const message = event.data;
+            console.log('Received message:', message);
+
+            if (event.data.type === 'ping') {
+                // Respond with "pong" when a ping is received
+                channel.postMessage({ type: 'pong' });
+                if (isPlayerReady) channel.postMessage({ type: 'isMuted', isMuted: window.player.isMuted() });
+            } else if (message.type === 'control') {
+                console.log(window.player);
+                if (!isPlayerReady) return;
+                switch (message.command) {
+                    case 'play':
+                        window.player.playVideo();
+                        break;
+                    case 'pause':
+                        window.player.pauseVideo();
+                        break;
+                    case 'stop':
+                        window.close();
+                        break;
+                    case 'mute':
+                        window.player.mute();
+                        break;
+                    case 'unmute':
+                        window.player.unMute();
+                        break;
+                    case 'seek':
+                        window.player.seekTo((message.time / 100) * window.player.getDuration(), true); // Seek to the percentage
+                        break;
+                    default:
+                        console.log('Unknown command:', message.command);
+                        break;
+                }
+            } else if (message.type === 'video') {
+                if (!isPlayerReady) return;
+                // Change video source based on new video ID
+                window.player.loadVideoById(message.videoId);
+            }
+        };
+
+        // Ping/Pong functionality
+        window.onload = function () {
+            // Send an "heartbeat" message every second
+            setInterval(function () {
+                channel.postMessage({ type: 'hi' });
+            }, 1000);
+        };
+    </script>
+</body>
+
+</html>
