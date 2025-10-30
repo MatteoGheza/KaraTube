@@ -1,0 +1,57 @@
+name: Build Windows Executable
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build executable with PyInstaller
+        run: |
+          pyinstaller server.spec
+
+      - name: Create distribution package
+        shell: pwsh
+        run: |
+          $distPath = "dist\server"
+          $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+          $zipName = "KaraTube-Windows-$timestamp.zip"
+          
+          # Create a temporary directory for the package
+          New-Item -ItemType Directory -Path "package" -Force | Out-Null
+          Copy-Item -Path $distPath -Destination "package\KaraTube" -Recurse
+          Copy-Item -Path "README.md" -Destination "package\"
+          Copy-Item -Path "LICENCE" -Destination "package\"
+          
+          # Create the zip file
+          Compress-Archive -Path "package\*" -DestinationPath $zipName -Force
+          Write-Output "Built artifact: $zipName"
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: KaraTube-Windows
+          path: KaraTube-Windows-*.zip
+          retention-days: 30
+
+      - name: Cleanup
+        shell: pwsh
+        run: |
+          Remove-Item -Path "package" -Recurse -Force
+          Remove-Item -Path "build" -Recurse -Force
