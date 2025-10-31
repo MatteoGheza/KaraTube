@@ -1,0 +1,25 @@
+[project]
+name = "karatube"
+version = "0.1.0"
+description = "Control Youtube video playback from other browser windows"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "flask>=3.1.2",
+    "flask-caching>=2.3.1",
+    "flask-limiter>=3.11.0",
+    "python-dotenv>=1.2.1",
+    "requests>=2.32.5",
+    "waitress>=3.0.2",
+]
+
+[project.scripts]
+karatube = "server:app.run"
+
+[tool.uv]
+package = true
+
+[dependency-groups]
+dev = [
+    "pyinstaller>=6.0.0",
+]

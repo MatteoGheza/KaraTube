@@ -18,17 +18,42 @@ cd KaraTube
 ```
 
 Install the required dependencies:
+
+**Using pip:**
 ```bash
 pip install -r requirements.txt
+```
+
+**Using uv (faster):**
+```bash
+uv sync
+```
+
+**Using PDM:**
+```bash
+pdm sync
 ```
 
 ## Usage
 
 1. Set up your YouTube API token (see [Developer Instructions](#developer-instructions))
 2. Run the application:
+
+**Using Python directly:**
 ```bash
 python server.py
 ```
+
+**Using uv:**
+```bash
+uv run karatube
+```
+
+**Using PDM:**
+```bash
+pdm run karatube
+```
+
 3. Go to `http://localhost:8080` in your web browser.
 
 ## Developer Instructions
@@ -47,7 +72,19 @@ YOUTUBE_API_KEY=your_api_key_here
 
 ### Development Setup
 
-Make sure you have all dependencies installed:
+Make sure you have all dependencies installed using your preferred package manager:
+
+**Using uv:**
+```bash
+uv sync
+```
+
+**Using PDM:**
+```bash
+pdm sync
+```
+
+**Using pip:**
 ```bash
 pip install -r requirements.txt
 ```
@@ -61,13 +98,33 @@ Navigate to the URL shown in the console (http://localhost:8080).
 
 ## Building the Application
 
-To create a standalone executable:
+To create a standalone executable, you can use either PyInstaller directly or through your package manager:
 
+**Using PyInstaller directly:**
 ```bash
 pyinstaller server.spec
 ```
 
+**Using uv:**
+```bash
+uv run pyinstaller server.spec
+```
+
+**Using PDM:**
+```bash
+pdm run pyinstaller server.spec
+```
+
 The executable will be available in the `dist` folder.
+
+## Configuration
+
+This project is configured using `pyproject.toml` with support for multiple package managers:
+- **pip**: Traditional Python package manager
+- **uv**: Fast, Rust-based package manager
+- **PDM**: Python Dependency Manager
+
+All dependencies and development tools are defined in `pyproject.toml`.
 
 ## License
 
