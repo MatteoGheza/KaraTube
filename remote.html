@@ -199,6 +199,35 @@
             font-size: 16px;
             font-weight: bold;
         }
+
+        #reconnect-button {
+            background-color: #ff6b6b;  /* Red-orange */
+            margin-top: 20px;
+            display: none;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        #reconnect-button:hover {
+            background-color: #ee5a52;
+        }
+
+        #reconnect-button:active {
+            background-color: #d43a39;
+        }
+
+        #reconnect-button i {
+            margin-right: 10px;
+            font-size: 24px;
+        }
+
+        #disconnect-message {
+            display: none;
+            margin-top: 15px;
+            font-size: 18px;
+            color: #dc3545;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -207,6 +236,8 @@
     <p id="ping-status"></p> <!-- Status for ping pong -->
     <div id="error-notification"></div>
     <button id="open-client-button" onclick="openClient()">Apri client</button>
+    <button id="reconnect-button" onclick="reconnectClient()"><i class="bx bx-refresh"></i>Riconnetti</button>
+    <p id="disconnect-message">⚠️ Client disconnesso. Clicca "Riconnetti" per continuare.</p>
     <div id="youtube-remote">
         <input type="text" id="search-box" placeholder="Nome della canzone..." />
         <button id="search-button"><i class="bx bx-search"></i>Cerca</button>
@@ -401,6 +432,8 @@
             if (event.data.type === 'pong') {
                 document.getElementById('ping-status').textContent = 'Client connesso.';
                 document.getElementById('open-client-button').style.display = 'none';
+                document.getElementById('reconnect-button').style.display = 'none';
+                document.getElementById('disconnect-message').style.display = 'none';
                 document.querySelectorAll("#youtube-remote button").forEach((btn) => { btn.disabled = false; });
                 document.getElementById('search-box').disabled = false;
                 isConnected = true;
@@ -444,10 +477,23 @@
             setTimeout(sendPing, 1000);
         }
 
+        function reconnectClient() {
+            // Try to reconnect by sending a ping
+            sendPing();
+            // If the client is not responding, open a new one
+            setTimeout(() => {
+                if (!isConnected) {
+                    openClient();
+                }
+            }, 2000);
+        }
+
         setInterval(function() {
             if (Date.now() - lastHeartbeat > 2000) {
                 document.getElementById('ping-status').textContent = 'Client disconnesso.';
                 document.getElementById('open-client-button').style.display = 'block';
+                document.getElementById('reconnect-button').style.display = 'block';
+                document.getElementById('disconnect-message').style.display = 'block';
                 document.querySelectorAll("#youtube-remote button").forEach((btn) => { btn.disabled = true; });
                 document.getElementById('search-box').disabled = true;
                 isConnected = false;
