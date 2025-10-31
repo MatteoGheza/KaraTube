@@ -159,6 +159,13 @@
                     case 'pause':
                         window.player.pauseVideo();
                         break;
+                    case 'toggle':
+                        if (window.player.getPlayerState() === YT.PlayerState.PLAYING) {
+                            window.player.pauseVideo();
+                        } else {
+                            window.player.playVideo();
+                        }
+                        break;
                     case 'stop':
                         window.close();
                         break;

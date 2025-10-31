@@ -500,8 +500,39 @@
             }
         }, 2500);
 
+        // Server-Sent Events (SSE) connection for receiving commands from server
+        function setupSSEConnection() {
+            const eventSource = new EventSource('/events');
+            
+            eventSource.addEventListener('open', () => {
+                console.log('SSE connection established');
+            });
+            
+            eventSource.addEventListener('message', (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    console.log('Received SSE event:', data);
+                    
+                    if (data.type === 'control') {
+                        // Forward the command to the client via BroadcastChannel
+                        channel.postMessage({ type: 'control', command: data.command });
+                    }
+                } catch (e) {
+                    console.error('Error parsing SSE event:', e);
+                }
+            });
+            
+            eventSource.addEventListener('error', (error) => {
+                console.error('SSE connection error:', error);
+                eventSource.close();
+                // Try to reconnect after 5 seconds
+                setTimeout(setupSSEConnection, 5000);
+            });
+        }
+
         window.onload = function() {
             sendPing();
+            setupSSEConnection();
         };
     </script>
 </body>
