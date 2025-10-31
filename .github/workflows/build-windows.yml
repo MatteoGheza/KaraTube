@@ -11,10 +11,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Read Python version from .python-version
+        id: python-version
+        run: |
+          $pythonVersion = Get-Content .python-version -Raw | ForEach-Object { $_.Trim() }
+          echo "version=$pythonVersion" >> $env:GITHUB_OUTPUT
+        shell: pwsh
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: ${{ steps.python-version.outputs.version }}
 
       - name: Install dependencies
         run: |
