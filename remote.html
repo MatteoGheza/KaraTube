@@ -185,12 +185,27 @@
             font-size: 18px;
             color: #333;
         }
+
+        #error-notification {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+            border-radius: 5px;
+            max-width: 600px;
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
 
     <h2>YouTube Remote Control</h2>
     <p id="ping-status"></p> <!-- Status for ping pong -->
+    <div id="error-notification"></div>
     <button id="open-client-button" onclick="openClient()">Apri client</button>
     <div id="youtube-remote">
         <input type="text" id="search-box" placeholder="Nome della canzone..." />
@@ -246,16 +261,53 @@
             if (event.key === 'Enter' && isConnected) {
                 const query = this.value;
                 if (query) {
-                    searchYouTube(query);
+                    handleSearch(query);
                 }
             }
         });
         document.getElementById('search-button').addEventListener('click', function() {
             const query = document.getElementById('search-box').value;
             if (query) {
-                searchYouTube(query);
+                handleSearch(query);
             }
         });
+
+        function extractVideoId(input) {
+            // Check if input is a valid video ID (11 characters, alphanumeric with - and _)
+            if (/^[a-zA-Z0-9_-]{11}$/.test(input)) {
+                return input;
+            }
+
+            // Try to extract video ID from various YouTube URL formats
+            const patterns = [
+                /(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})/, // youtube.com/watch?v=...
+                /(?:https?:\/\/)?(?:www\.)?youtu\.be\/([a-zA-Z0-9_-]{11})/, // youtu.be/...
+                /(?:https?:\/\/)?(?:www\.)?youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/, // youtube.com/embed/...
+            ];
+
+            for (let pattern of patterns) {
+                const match = input.match(pattern);
+                if (match && match[1]) {
+                    return match[1];
+                }
+            }
+
+            return null; // Not a URL or video ID
+        }
+
+        function handleSearch(query) {
+            const videoId = extractVideoId(query.trim());
+            
+            if (videoId) {
+                // Direct video load
+                console.log('Loading video directly:', videoId);
+                selectVideo(videoId);
+                document.getElementById('search-box').value = ''; // Clear search box
+            } else {
+                // Search for video
+                searchYouTube(query);
+            }
+        }
 
         function searchYouTube(query) {
             const url = `/search_video?query=${query}`;
@@ -269,6 +321,7 @@
         }
 
         function displaySearchResults(videos) {
+            clearVideoError();
             const videoList = document.getElementById('video-list');
             videoList.innerHTML = '';
             if (videos.length === 0) {
@@ -360,6 +413,12 @@
                 document.getElementById('mute-toggle-button').innerHTML = isMuted ? '<i class="bx bx-volume-full"></i> Togli muto' : '<i class="bx bx-volume-mute"></i> Muto';
             } else if (event.data.type === 'progress') {
                 updateProgressBar(event.data.time);
+            } else if (event.data.type === 'error') {
+                if (event.data.errorType === false) {
+                    clearVideoError();
+                } else {
+                    showVideoError(event.data.errorType);
+                }
             }
         });
 
@@ -367,6 +426,16 @@
             channel.postMessage({ type: 'ping' });
             console.trace();
             document.getElementById('ping-status').textContent = 'Messaggio inviato. In attesa di risposta...';
+        }
+
+        function showVideoError(errorType) {
+            const errorNotification = document.getElementById('error-notification');
+            errorNotification.innerHTML = `⚠️ ${errorType}`;
+            errorNotification.style.display = 'block';
+        }
+
+        function clearVideoError() {
+            document.getElementById('error-notification').style.display = 'none';
         }
 
         function openClient() {

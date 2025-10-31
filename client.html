@@ -60,6 +60,10 @@
         <iframe id="youtube-iframe" src="https://www.youtube.com/embed/rdorzAplV3M?enablejsapi=1&rel=0" frameborder="0"
             allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen>
         </iframe>
+        <div id="error-message" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: rgba(220, 53, 69, 0.95); color: white; padding: 30px; border-radius: 10px; text-align: center; font-size: 18px; max-width: 400px; z-index: 1000;">
+            <h3>⚠️ Video non disponibile</h3>
+            <p>Il video non può essere caricato perché l'uploader non consente l'incorporamento in altri siti.</p>
+        </div>
     </div>
 
     <script>
@@ -68,7 +72,8 @@
             window.player = new YT.Player('youtube-iframe', {
                 events: {
                     'onReady': onPlayerReady,
-                    'onStateChange': onPlayerStateChange
+                    'onStateChange': onPlayerStateChange,
+                    'onError': onPlayerError
                 }
             });
             console.log(window.player);
@@ -83,8 +88,37 @@
             channel.postMessage({ type: 'isMuted', isMuted: window.player.isMuted() });
         }
 
+        function onPlayerError(event) {
+            // Handle YouTube player errors
+            const errorCode = event.data;
+            let errorMessage = '';
+
+            switch (errorCode) {
+                case 2:
+                    errorMessage = 'Parametro non valido';
+                    break;
+                case 5:
+                    errorMessage = 'Errore del player HTML5';
+                    break;
+                case 100:
+                    errorMessage = 'Video non trovato';
+                    break;
+                case 101:
+                case 150:
+                    errorMessage = 'Video non incorporabile';
+                    break;
+                default:
+                    errorMessage = 'Errore sconosciuto';
+            }
+
+            console.error('Player Error:', errorCode, errorMessage);
+            showVideoError(errorMessage);
+        }
+
         function onPlayerStateChange(event) {
             if (event.data == YT.PlayerState.PLAYING || event.data == YT.PlayerState.PAUSED) {
+                // Video is playing or paused successfully - clear any error message
+                clearVideoError();
                 // Send progress updates to the remote
                 setInterval(function () {
                     const currentTime = window.player.getCurrentTime();
@@ -93,6 +127,16 @@
                     channel.postMessage({ type: 'progress', time: { currentTime, duration } });
                 }, 1000); // Update every second
             }
+        }
+
+        function showVideoError(errorType) {
+            document.getElementById('error-message').style.display = 'block';
+            channel.postMessage({ type: 'error', errorType: errorType });
+        }
+
+        function clearVideoError() {
+            document.getElementById('error-message').style.display = 'none';
+            channel.postMessage({ type: 'error', errorType: false });
         }
 
         const channel = new BroadcastChannel('youtube_channel');
@@ -133,6 +177,7 @@
                 }
             } else if (message.type === 'video') {
                 if (!isPlayerReady) return;
+                clearVideoError();
                 // Change video source based on new video ID
                 window.player.loadVideoById(message.videoId);
             }
